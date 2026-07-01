@@ -1,0 +1,79 @@
+@import "tailwindcss";
+
+@theme inline {
+  --font-display: var(--font-noto-kr);
+  --font-body: var(--font-noto-kr);
+  --font-mono: var(--font-plex-mono);
+
+  --color-ink: #1c1e22;
+  --color-ink-soft: #5b6068;
+  --color-paper: #f1efea;
+  --color-paper-raised: #ffffff;
+
+  --color-ios: #3a3d42;
+  --color-ios-tint: #e9e9eb;
+  --color-ios-line: #d3d4d8;
+
+  --color-android: #1f9d5c;
+  --color-android-tint: #e2f5ea;
+  --color-android-line: #bfe6d2;
+
+  --color-seam: #e0983a;
+  --color-seam-soft: #f4dcb8;
+  --color-coral: #d95c43;
+}
+
+html,
+body {
+  background: var(--color-paper);
+  color: var(--color-ink);
+  font-family: var(--font-body), system-ui, sans-serif;
+}
+
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+::selection {
+  background: var(--color-seam-soft);
+  color: var(--color-ink);
+}
+
+/* seam / zipper divider used between the two store columns */
+.seam-line {
+  background-image: repeating-linear-gradient(
+    to bottom,
+    var(--color-seam) 0px,
+    var(--color-seam) 6px,
+    transparent 6px,
+    transparent 14px
+  );
+  width: 2px;
+}
+
+.seam-badge {
+  border: 1.5px solid var(--color-seam);
+  background: var(--color-paper);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .card-enter {
+    animation: card-rise 0.35s ease-out both;
+  }
+}
+
+@keyframes card-rise {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-seam);
+  outline-offset: 2px;
+}
