@@ -52,6 +52,7 @@ export default function Home() {
         <input
           value={input}
           onChange={(e) => setInput(e.target.value)}
+          maxLength={100}
           placeholder="검색할 앱 이름을 입력하세요"
           className="flex-1 rounded-xl border border-[var(--color-ink-soft)]/25 bg-[var(--color-paper-raised)] px-4 py-3 text-[15px] outline-none placeholder:text-[var(--color-ink-soft)]/70 focus:border-[var(--color-seam)]"
         />

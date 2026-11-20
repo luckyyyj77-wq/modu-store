@@ -4,6 +4,8 @@ import type { StoreApp, SearchResponse } from "@/lib/types";
 
 export const runtime = "nodejs";
 
+const MAX_QUERY_LENGTH = 100;
+
 // Search results only from Google's/Apple's public catalog endpoints —
 // no scraping of anything requiring auth, no bypassing of paywalls.
 
@@ -78,6 +80,13 @@ export async function GET(request: NextRequest) {
     );
   }
 
+  if (term.length > MAX_QUERY_LENGTH) {
+    return NextResponse.json(
+      { error: `검색어는 ${MAX_QUERY_LENGTH}자 이하로 입력해주세요.` },
+      { status: 400 }
+    );
+  }
+
   const [iosResult, androidResult] = await Promise.allSettled([
     searchIos(term),
     searchAndroid(term),
@@ -99,5 +108,16 @@ export async function GET(request: NextRequest) {
     },
   };
 
-  return NextResponse.json(payload);
+  // Cache successful results at the CDN so repeated queries don't hit
+  // Apple/Google every time. Skip caching when either store failed, so a
+  // transient error isn't served to other users.
+  const hasError = payload.errors.ios !== null || payload.errors.android !== null;
+
+  return NextResponse.json(payload, {
+    headers: {
+      "Cache-Control": hasError
+        ? "no-store"
+        : "public, s-maxage=300, stale-while-revalidate=600",
+    },
+  });
 }
