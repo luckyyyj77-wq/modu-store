@@ -32,7 +32,10 @@ export default function Home() {
     runSearch(input);
   }
 
-  const hasSearched = status === "done";
+  const isLoading = status === "loading";
+  // Once any search has succeeded, keep showing counts/tabs for the last
+  // result while a new search is in flight (results are dimmed instead).
+  const hasSearched = result !== null;
 
   return (
     <main className="mx-auto flex w-full max-w-4xl flex-1 flex-col px-5 pb-16 pt-10 md:pt-16">
@@ -58,15 +61,15 @@ export default function Home() {
         />
         <button
           type="submit"
-          disabled={status === "loading"}
+          disabled={isLoading}
           className="rounded-xl bg-[var(--color-ink)] px-5 py-3 text-[14px] font-medium text-[var(--color-paper)] transition-opacity hover:opacity-90 disabled:opacity-50"
         >
-          {status === "loading" ? "검색 중" : "검색"}
+          {isLoading ? "검색 중" : "검색"}
         </button>
       </form>
 
       {/* mobile tab toggle */}
-      {hasSearched && (
+      {hasSearched && status !== "error" && (
         <div className="mb-5 flex gap-1 rounded-full border border-[var(--color-ink-soft)]/20 p-1 md:hidden">
           {(
             [
@@ -104,8 +107,25 @@ export default function Home() {
         </div>
       )}
 
-      {result && (
-        <>
+      {isLoading && !result && (
+        <p
+          role="status"
+          className="mt-6 text-center text-[14px] text-[var(--color-ink-soft)]"
+        >
+          두 마켓에서 검색하고 있어요…
+        </p>
+      )}
+
+      {result && status !== "error" && (
+        <div
+          aria-busy={isLoading}
+          className={`transition-opacity ${isLoading ? "pointer-events-none opacity-40" : ""}`}
+        >
+          {isLoading && (
+            <p role="status" className="sr-only">
+              새 검색 결과를 불러오는 중이에요.
+            </p>
+          )}
           {/* desktop: side by side with seam */}
           <div className="hidden md:flex">
             <ResultsColumn
@@ -149,7 +169,7 @@ export default function Home() {
               />
             )}
           </div>
-        </>
+        </div>
       )}
 
       <footer className="mt-auto pt-16 text-center font-[family-name:var(--font-mono)] text-[11px] text-[var(--color-ink-soft)]/70">

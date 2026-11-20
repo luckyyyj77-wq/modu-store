@@ -2,7 +2,7 @@ export type StoreApp = {
   id: string;
   name: string;
   developer: string;
-  icon: string;
+  icon: string | null;
   score: number | null;
   ratingCount: number | null;
   price: string;

@@ -13,7 +13,7 @@ type ItunesResult = {
   trackId: number;
   trackName: string;
   artistName: string;
-  artworkUrl100: string;
+  artworkUrl100?: string;
   averageUserRating?: number;
   userRatingCount?: number;
   formattedPrice?: string | null;
@@ -42,7 +42,7 @@ async function searchIos(term: string): Promise<StoreApp[]> {
     id: String(item.trackId),
     name: item.trackName,
     developer: item.artistName,
-    icon: item.artworkUrl100?.replace("100x100", "256x256"),
+    icon: item.artworkUrl100?.replace("100x100", "256x256") || null,
     score: item.averageUserRating ?? null,
     ratingCount: item.userRatingCount ?? null,
     price: item.formattedPrice || "무료",
@@ -62,7 +62,7 @@ async function searchAndroid(term: string): Promise<StoreApp[]> {
     id: item.appId,
     name: item.title,
     developer: item.developer,
-    icon: item.icon,
+    icon: item.icon || null,
     score: item.score ?? null,
     ratingCount: null,
     price: item.free ? "무료" : item.priceText || "유료",

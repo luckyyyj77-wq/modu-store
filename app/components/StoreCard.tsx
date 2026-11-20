@@ -22,15 +22,24 @@ export function StoreCard({
       className={`card-enter group flex items-center gap-3 rounded-xl border bg-[var(--color-paper-raised)] p-3 transition-colors ${accent}`}
       style={{ animationDelay: `${index * 40}ms` }}
     >
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src={app.icon}
-        alt=""
-        width={52}
-        height={52}
-        className="h-13 w-13 shrink-0 rounded-[14px] bg-[var(--color-paper)] object-cover"
-        loading="lazy"
-      />
+      {app.icon ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={app.icon}
+          alt=""
+          width={52}
+          height={52}
+          className="h-13 w-13 shrink-0 rounded-[14px] bg-[var(--color-paper)] object-cover"
+          loading="lazy"
+        />
+      ) : (
+        <span
+          aria-hidden
+          className="flex h-13 w-13 shrink-0 items-center justify-center rounded-[14px] bg-[var(--color-paper)] text-[20px] font-bold text-[var(--color-ink-soft)]"
+        >
+          {app.name.trim().charAt(0) || "?"}
+        </span>
+      )}
 
       <div className="min-w-0 flex-1">
         <p className="truncate text-[15px] font-medium leading-tight text-[var(--color-ink)]">

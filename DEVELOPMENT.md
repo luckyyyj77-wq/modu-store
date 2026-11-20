@@ -121,7 +121,7 @@ ResultsColumn × 2 (iOS / Android) 렌더링
 
 - **`Promise.allSettled`**: 한 마켓의 API 실패가 전체 검색을 막지 않도록 합니다. 실패한 쪽은 빈 배열 + 에러 메시지로 대체됩니다.
 - **API Route에 `runtime = "nodejs"` 명시**: `google-play-scraper`는 Node.js 네이티브 모듈을 사용하므로 Edge 런타임에서 동작하지 않습니다.
-- **클라이언트 컴포넌트 최소화**: `page.tsx`만 `"use client"`를 선언하고, 나머지 컴포넌트는 서버 컴포넌트로 동작합니다.
+- **`"use client"` 경계**: `page.tsx`만 `"use client"`를 선언하지만, `ResultsColumn` · `StoreCard` · `SeamDivider`는 이 파일에서 import되므로 **모두 클라이언트 번들에 포함되어 클라이언트 컴포넌트로 동작**합니다. 하위 컴포넌트에 지시어가 없는 이유는 서버 컴포넌트라서가 아니라, 이미 경계 아래에 있어 따로 선언할 필요가 없기 때문입니다. 서버 컴포넌트는 `layout.tsx`뿐입니다.
 
 ---
 
@@ -135,7 +135,7 @@ ResultsColumn × 2 (iOS / Android) 렌더링
 
 | 파라미터 | 타입 | 필수 | 설명 |
 |---------|------|------|------|
-| `q` | string | ✅ | 검색할 앱 이름 |
+| `q` | string | ✅ | 검색할 앱 이름 (최대 100자) |
 
 ```
 GET /api/search?q=카카오톡
@@ -183,7 +183,13 @@ GET /api/search?q=카카오톡
 
 ```json
 { "error": "검색어(q)를 입력해주세요." }
+{ "error": "검색어는 100자 이하로 입력해주세요." }
 ```
+
+#### 캐싱
+
+- 두 마켓 모두 성공하면 `Cache-Control: public, s-maxage=300, stale-while-revalidate=600`을 보냅니다. Vercel CDN이 같은 검색어를 5분간 캐시합니다 (브라우저에는 `public`만 보이는 것이 정상).
+- 한쪽이라도 실패하면 `no-store`로 응답해 일시적 오류가 캐시되지 않게 합니다.
 
 ---
 
@@ -199,6 +205,10 @@ GET /api/search?q=카카오톡
 | `result` | `SearchResponse \| null` | 마지막 검색 결과 |
 | `status` | `"idle" \| "loading" \| "done" \| "error"` | 요청 상태 |
 | `tab` | `"ios" \| "android"` | 모바일 활성 탭 |
+
+로딩 처리:
+- 첫 검색 중: "두 마켓에서 검색하고 있어요…" 안내 표시
+- 재검색 중: 이전 결과를 흐리게(`opacity-40`) 유지하고 `aria-busy` 설정. 결과 개수와 모바일 탭은 계속 표시
 
 레이아웃 분기:
 - `md` 이상: `ResultsColumn` + `SeamDivider` + `ResultsColumn` 나란히 배치
@@ -237,7 +247,7 @@ GET /api/search?q=카카오톡
 | `index` | `number` | 카드 등장 애니메이션 딜레이 계산 (`index * 40ms`) |
 
 - `<a>` 태그로 구현되어 `target="_blank"` + `rel="noopener noreferrer"` 적용
-- 아이콘 이미지는 `loading="lazy"`로 지연 로드
+- 아이콘 이미지는 `loading="lazy"`로 지연 로드, `icon`이 `null`이면 앱 이름 첫 글자 플레이스홀더 표시
 - iOS 아이콘 URL: iTunes 기본 `100x100` → `256x256`으로 교체하여 고해상도 표시
 
 ---
@@ -261,7 +271,7 @@ type StoreApp = {
   id: string;          // iOS: trackId(숫자 → 문자열), Android: 패키지명
   name: string;
   developer: string;
-  icon: string;        // 이미지 URL
+  icon: string | null; // 이미지 URL (없으면 null → 카드에서 앱 이름 첫 글자로 대체)
   score: number | null; // 평점 (없으면 null)
   ratingCount: number | null; // 리뷰 수 (Android scraper는 미제공 → null)
   price: string;       // "무료" 또는 가격 문자열
@@ -347,8 +357,8 @@ vercel deploy
 ### 국가 코드 고정
 현재 iOS(`country=kr`)와 Android(`country=kr`, `lang=ko`) 모두 한국 마켓으로 고정되어 있습니다. 다국가 지원 시 검색창 옆에 국가 선택 UI를 추가하고, API Route에 파라미터로 넘겨야 합니다.
 
-### iTunes Search API 캐싱 비활성화
-`searchIos` 함수에서 `next: { revalidate: 0 }`으로 캐싱을 끄고 항상 최신 결과를 가져옵니다. 트래픽이 많아지면 적절한 `revalidate` 값(예: 300초)을 설정해 API 호출 횟수를 줄일 수 있습니다.
+### 캐싱 구조
+`searchIos`의 `fetch`는 `next: { revalidate: 0 }`으로 서버 측 데이터 캐시를 쓰지 않습니다. 대신 `/api/search` 응답 자체에 `s-maxage=300`을 붙여 Vercel CDN 단에서 캐시합니다 (6장 참고). 같은 검색어를 반복 호출해도 Apple·Google로 요청이 가지 않습니다.
 
 ---
 
